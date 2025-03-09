@@ -64,30 +64,41 @@ User request: {user_input}
     
     try:
         response = requests.post(HUGGINGFACE_API_URL, headers=headers, json={"inputs": prompt})
-        print(response.json())  # Debug print
         
         if response.status_code == 503:
             return json.dumps({"action": "chat", "details": {"message": "I'm still loading. Please try again later."}})
         
+        # Get the full response text
         response_text = response.json()[0].get("generated_text", "")
         
-        # Look for JSON in response
-        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-        if json_match:
-            json_str = json_match.group(0)
-            try:
-                json_obj = json.loads(json_str)
-                # If it has an answer key, treat it as a chat response
-                if "answer" in json_obj:
-                    return json.dumps({
-                        "action": "chat",
-                        "details": {"message": json_obj["answer"]}
-                    })
-                else:
-                    return json_str  # Return the JSON as is for actions
-            except json.JSONDecodeError:
-                return force_chat_response(extract_answer(response_text))
+        # Extract only the response part after the instruction
+        # This regex looks for content after the [/INST]</s> tag
+        clean_response_match = re.search(r'\[\/INST\]\<\/s\>(.*)', response_text, re.DOTALL)
+        
+        if clean_response_match:
+            clean_response = clean_response_match.group(1).strip()
+            
+            # Check if the response contains JSON
+            json_match = re.search(r'\{.*\}', clean_response, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(0)
+                try:
+                    json_obj = json.loads(json_str)
+                    if "answer" in json_obj:
+                        return json.dumps({
+                            "action": "chat",
+                            "details": {"message": json_obj["answer"]}
+                        })
+                    else:
+                        return json_str  # Return the JSON as is for actions
+                except json.JSONDecodeError:
+                    # If JSON parsing fails, treat as regular text
+                    return force_chat_response(clean_response)
+            else:
+                # No JSON found, treat as regular text
+                return force_chat_response(clean_response)
         else:
+            # Fallback if we can't extract cleanly
             return force_chat_response(extract_answer(response_text))
     
     except Exception as e:
