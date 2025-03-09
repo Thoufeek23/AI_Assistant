@@ -565,21 +565,21 @@
         });
         
         // Send button
-        const sendButton = document.createElement('button');
+       /* const sendButton = document.createElement('button');
         sendButton.classList.add('btn', 'btn-primary');
         sendButton.textContent = 'Send Email';
         sendButton.addEventListener('click', function() {
             // Send the email using the API
             sendEmail(emailDetails);
             document.body.removeChild(modalOverlay);
-        });
+        });*/
         
         // Buttons container
         const buttonsDiv = document.createElement('div');
         buttonsDiv.style.display = 'flex';
         buttonsDiv.style.justifyContent = 'flex-end';
         buttonsDiv.appendChild(closeButton);
-        buttonsDiv.appendChild(sendButton);
+        //buttonsDiv.appendChild(sendButton);
         
         // Assemble modal
         modalContent.appendChild(emailHeader);
