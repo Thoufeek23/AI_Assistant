@@ -260,6 +260,53 @@
                 max-width: 90%;
             }
         }
+        .message-actions {
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        border-radius: 0.2rem;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+    }
+    
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+        border: none;
+    }
+    
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+    }
+    
+    .modal-overlay {
+        animation: fadeIn 0.2s ease;
+    }
+    
+    .modal-content {
+        animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes slideIn {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
     </style>
 </head>
 <body>
@@ -314,118 +361,282 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const messageForm = document.getElementById('message-form');
-            const userInput = document.getElementById('user-input');
-            const chatMessages = document.getElementById('chat-messages');
-            const typingIndicator = document.getElementById('typing-indicator');
-            const themeToggle = document.getElementById('theme-toggle');
-            
-            // Theme toggle functionality
-            themeToggle.addEventListener('click', function() {
-                document.body.classList.toggle('dark-mode');
-                themeToggle.classList.toggle('fa-sun');
-                themeToggle.classList.toggle('fa-moon');
-            });
-            
-            // Current time for messages
-            function getCurrentTime() {
-                const now = new Date();
-                return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            }
-            
-            messageForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const message = userInput.value.trim();
-                if (message) {
-                    addMessage(message, 'user');
-                    userInput.value = '';
-                    typingIndicator.style.display = 'flex';
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                    processMessage(message);
-                }
-            });
+    <!-- Add this script to your existing HTML file -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const messageForm = document.getElementById('message-form');
+    const userInput = document.getElementById('user-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const themeToggle = document.getElementById('theme-toggle');
     
-            function addMessage(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message');
-            
-            const messageBubble = document.createElement('div');
-            messageBubble.classList.add('message-bubble');
-            
-            // Handle newlines properly by replacing \n with <br> tags
-            if (typeof text === 'string') {
-                // Split by newlines and join with <br> tags
-                const formattedText = text.split('\n').map(line => {
-                    return document.createTextNode(line);
-                }).reduce((fragment, textNode, index, array) => {
-                    fragment.appendChild(textNode);
-                    // Add line break after each line except the last one
-                    if (index < array.length - 1) {
-                        fragment.appendChild(document.createElement('br'));
-                    }
-                    return fragment;
-                }, document.createDocumentFragment());
-                
-                messageBubble.appendChild(formattedText);
-            } else {
-                // Fallback if text is not a string
-                messageBubble.textContent = text;
-            }
-            
-            const messageInfo = document.createElement('div');
-            messageInfo.classList.add('message-info');
-            messageInfo.textContent = getCurrentTime();
-            
-            if (sender === 'user') {
-                messageDiv.classList.add('user-message');
-            } else {
-                messageDiv.classList.add('assistant-message');
-            }
-            
-            messageDiv.appendChild(messageBubble);
-            messageDiv.appendChild(messageInfo);
-            chatMessages.appendChild(messageDiv);
+    // Theme toggle functionality
+    themeToggle.addEventListener('click', function() {
+        document.body.classList.toggle('dark-mode');
+        themeToggle.classList.toggle('fa-sun');
+        themeToggle.classList.toggle('fa-moon');
+    });
+    
+    // Current time for messages
+    function getCurrentTime() {
+        const now = new Date();
+        return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = userInput.value.trim();
+        if (message) {
+            addMessage(message, 'user');
+            userInput.value = '';
+            typingIndicator.style.display = 'flex';
             chatMessages.scrollTop = chatMessages.scrollHeight;
+            processMessage(message);
         }
-    
-            function processMessage(message) {
-                fetch('/api/process', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ message: message })
-                })
-                .then(response => {
-                    return response.json();
-                })
-                .then(data => {
-                    typingIndicator.style.display = 'none';
-                    
-                    if (data && data.response !== null) {
-                        addMessage(data.response, 'assistant');
-                    } else if (data && data.details && data.details.message) {
-                        addMessage(data.details.message, 'assistant');
-                    } else {
-                        addMessage("I'm sorry, I couldn't process that request correctly.", 'assistant');
-                    }
-                })
-                .catch(error => {
-                    typingIndicator.style.display = 'none';
-                    addMessage("Sorry, there was an error connecting to the server.", 'assistant');
-                });
-            }
-            
-            // Add some keyboard shortcuts
-            userInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    messageForm.dispatchEvent(new Event('submit'));
+    });
+
+    function addMessage(text, sender, extraDetails = null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+        
+        const messageBubble = document.createElement('div');
+        messageBubble.classList.add('message-bubble');
+        
+        // Handle newlines properly by replacing \n with <br> tags
+        if (typeof text === 'string') {
+            // Split by newlines and join with <br> tags
+            const formattedText = text.split('\n').map(line => {
+                return document.createTextNode(line);
+            }).reduce((fragment, textNode, index, array) => {
+                fragment.appendChild(textNode);
+                // Add line break after each line except the last one
+                if (index < array.length - 1) {
+                    fragment.appendChild(document.createElement('br'));
                 }
-            });
+                return fragment;
+            }, document.createDocumentFragment());
+            
+            messageBubble.appendChild(formattedText);
+        } else {
+            // Fallback if text is not a string
+            messageBubble.textContent = text;
+        }
+        
+        // Add action buttons for different message types
+        if (extraDetails) {
+            const actionDiv = document.createElement('div');
+            actionDiv.classList.add('message-actions');
+            actionDiv.style.marginTop = '10px';
+            
+            if (extraDetails.type === 'email') {
+                const viewBtn = document.createElement('button');
+                viewBtn.classList.add('btn', 'btn-sm', 'btn-primary', 'me-2');
+                viewBtn.textContent = 'View Full Email';
+                viewBtn.addEventListener('click', function() {
+                    // Display a modal with the full email content
+                    displayEmailModal(extraDetails.details);
+                });
+                
+                const sendBtn = document.createElement('button');
+                sendBtn.classList.add('btn', 'btn-sm', 'btn-success');
+                sendBtn.textContent = 'Send Email';
+                sendBtn.addEventListener('click', function() {
+                    // Send the email using the API
+                    sendEmail(extraDetails.details);
+                });
+                
+                actionDiv.appendChild(viewBtn);
+                actionDiv.appendChild(sendBtn);
+                messageBubble.appendChild(actionDiv);
+            } 
+            else if (extraDetails.type === 'reminder') {
+                // Add actions for reminders if needed
+                const confirmBtn = document.createElement('button');
+                confirmBtn.classList.add('btn', 'btn-sm', 'btn-success');
+                confirmBtn.textContent = 'Confirm Reminder';
+                confirmBtn.addEventListener('click', function() {
+                    alert('Reminder confirmed!');
+                });
+                
+                actionDiv.appendChild(confirmBtn);
+                messageBubble.appendChild(actionDiv);
+            }
+            else if (extraDetails.type === 'websearch') {
+                // Add actions for web searches if needed
+                const openSearchBtn = document.createElement('button');
+                openSearchBtn.classList.add('btn', 'btn-sm', 'btn-primary');
+                openSearchBtn.textContent = 'Open Search';
+                openSearchBtn.addEventListener('click', function() {
+                    const query = extraDetails.details.query;
+                    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                });
+                
+                actionDiv.appendChild(openSearchBtn);
+                messageBubble.appendChild(actionDiv);
+            }
+        }
+        
+        const messageInfo = document.createElement('div');
+        messageInfo.classList.add('message-info');
+        messageInfo.textContent = getCurrentTime();
+        
+        if (sender === 'user') {
+            messageDiv.classList.add('user-message');
+        } else {
+            messageDiv.classList.add('assistant-message');
+        }
+        
+        messageDiv.appendChild(messageBubble);
+        messageDiv.appendChild(messageInfo);
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function sendEmail(emailDetails) {
+        // Make API call to send the email
+        fetch('/api/send-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(emailDetails)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Email sent successfully!');
+            } else {
+                alert('Failed to send email: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error sending email: ' + error);
         });
+    }
+
+    function displayEmailModal(emailDetails) {
+        // Create modal elements
+        const modalOverlay = document.createElement('div');
+        modalOverlay.classList.add('modal-overlay');
+        modalOverlay.style.position = 'fixed';
+        modalOverlay.style.top = '0';
+        modalOverlay.style.left = '0';
+        modalOverlay.style.width = '100%';
+        modalOverlay.style.height = '100%';
+        modalOverlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        modalOverlay.style.zIndex = '1000';
+        modalOverlay.style.display = 'flex';
+        modalOverlay.style.justifyContent = 'center';
+        modalOverlay.style.alignItems = 'center';
+        
+        const modalContent = document.createElement('div');
+        modalContent.classList.add('modal-content');
+        modalContent.style.backgroundColor = 'white';
+        modalContent.style.borderRadius = '10px';
+        modalContent.style.padding = '20px';
+        modalContent.style.maxWidth = '600px';
+        modalContent.style.width = '90%';
+        modalContent.style.maxHeight = '80vh';
+        modalContent.style.overflow = 'auto';
+        
+        // Email header
+        const emailHeader = document.createElement('div');
+        emailHeader.innerHTML = `
+            <h3>Email Preview</h3>
+            <p><strong>To:</strong> ${emailDetails.to || 'Not specified'}</p>
+            <p><strong>Subject:</strong> ${emailDetails.subject || 'No subject'}</p>
+            ${emailDetails.cc ? `<p><strong>CC:</strong> ${emailDetails.cc}</p>` : ''}
+            <hr>
+        `;
+        
+        // Email body
+        const emailBody = document.createElement('div');
+        emailBody.style.whiteSpace = 'pre-wrap';
+        emailBody.style.marginBottom = '20px';
+        emailBody.textContent = emailDetails.body || 'No content';
+        
+        // Close button
+        const closeButton = document.createElement('button');
+        closeButton.classList.add('btn', 'btn-secondary');
+        closeButton.textContent = 'Close';
+        closeButton.style.marginRight = '10px';
+        closeButton.addEventListener('click', function() {
+            document.body.removeChild(modalOverlay);
+        });
+        
+        // Send button
+        const sendButton = document.createElement('button');
+        sendButton.classList.add('btn', 'btn-primary');
+        sendButton.textContent = 'Send Email';
+        sendButton.addEventListener('click', function() {
+            // Send the email using the API
+            sendEmail(emailDetails);
+            document.body.removeChild(modalOverlay);
+        });
+        
+        // Buttons container
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.style.display = 'flex';
+        buttonsDiv.style.justifyContent = 'flex-end';
+        buttonsDiv.appendChild(closeButton);
+        buttonsDiv.appendChild(sendButton);
+        
+        // Assemble modal
+        modalContent.appendChild(emailHeader);
+        modalContent.appendChild(emailBody);
+        modalContent.appendChild(buttonsDiv);
+        modalOverlay.appendChild(modalContent);
+        
+        // Apply dark mode if active
+        if (document.body.classList.contains('dark-mode')) {
+            modalContent.style.backgroundColor = '#333';
+            modalContent.style.color = 'white';
+        }
+        
+        // Add to body
+        document.body.appendChild(modalOverlay);
+    }
+
+    function processMessage(message) {
+        fetch('/api/process', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message: message })
+        })
+        .then(response => {
+            return response.json();
+        })
+        .then(data => {
+            typingIndicator.style.display = 'none';
+            
+            if (data && data.response !== null) {
+                // Pass the type and details for specialized rendering
+                addMessage(data.response, 'assistant', {
+                    type: data.type,
+                    details: data.details
+                });
+            } else if (data && data.details && data.details.message) {
+                addMessage(data.details.message, 'assistant');
+            } else {
+                addMessage("I'm sorry, I couldn't process that request correctly.", 'assistant');
+            }
+        })
+        .catch(error => {
+            typingIndicator.style.display = 'none';
+            addMessage("Sorry, there was an error connecting to the server.", 'assistant');
+        });
+    }
+    
+    // Add some keyboard shortcuts
+    userInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            messageForm.dispatchEvent(new Event('submit'));
+        }
+    });
+});
     </script>
 </body>
 </html>
